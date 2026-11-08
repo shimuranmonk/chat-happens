@@ -66,7 +66,7 @@ Open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and 
 1. Open ChatGPT in the same browser and sign in to your test account.
 2. Refresh the ChatGPT page if it was already open.
 3. Open the sidebar that lists your conversations.
-4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.6**.
+4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.7**.
 5. Click **Enter cleanup mode**. Small checkboxes should appear beside supported chats.
 
 If checkboxes do not appear, leave your chats unchanged and check the troubleshooting tips below.
@@ -104,7 +104,7 @@ Open **Batch results** to see what happened to each chat:
 
 | Result | What it means |
 |---|---|
-| Succeeded | Chat Happens saw a success notice, or verified that the delete confirmation closed and that specific chat stayed removed while neighboring chats remained. This verifies the page result, not deletion from OpenAI's servers. |
+| Succeeded | Chat Happens saw a success notice, or verified that the relevant confirmation or archive menu closed and that specific chat stayed removed while neighboring chats remained. This verifies the page result, not deletion from OpenAI's servers. |
 | Skipped | The selected chat could not be found reliably or brought into view. No action was started for that chat. Check it manually; you can review and retry skipped chats separately. |
 | Failed | A check failed before the action was submitted. Read the accompanying explanation. |
 | Stopped before processing | Cleanup stopped before this chat was processed. |

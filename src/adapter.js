@@ -220,20 +220,22 @@ export class ChatGPTAdapter {
           const removed = !currentIds.has(item.id);
           const historyVisible = history && this.isVisible(history);
           if (receipt && historyVisible && removed) return receipt;
-          // Some ChatGPT layouts complete deletion without a status toast.
-          // Require the exact dialog we submitted to close, the same visible
+          // Some ChatGPT layouts complete actions without a status toast.
+          // Require the exact dialog/menu we used to close, the same visible
           // history root, every neighboring ID to remain, and a stable interval.
           const locationExpected = this.doc.location.href === initialUrl ||
             (initialPath.replace(/\/$/, '') === `/c/${item.id}` && this.doc.location.pathname === '/');
           const overlays = this.activeOverlays();
-          const completedInPage = action === 'delete' && confirmationDialog &&
-            (!confirmationDialog.isConnected || !overlays.includes(confirmationDialog)) &&
+          const actionClosed = action === 'delete'
+            ? confirmationDialog && (!confirmationDialog.isConnected || !overlays.includes(confirmationDialog))
+            : menu && (!menu.isConnected || menu.getAttribute('data-state') === 'closed' || menu.closest('[hidden], [aria-hidden="true"]'));
+          const completedInPage = actionClosed &&
             overlays.length === 0 && history === initialHistory && historyVisible &&
             removed && neighbors.length > 0 && neighbors.every(id => currentIds.has(id)) && locationExpected;
           if (!completedInPage) { settledSince = null; return null; }
           if (settledSince === null) settledSince = Date.now();
           return Date.now() - settledSince >= this.settle
-            ? 'ChatGPT closed the delete confirmation and removed this chat from the sidebar; neighboring chats stayed in place.'
+            ? `ChatGPT closed the ${action === 'delete' ? 'delete confirmation' : 'archive menu'} and removed this chat from the sidebar; neighboring chats stayed in place.`
             : null;
         });
         if (!success) throw new CleanupError('Action was submitted, but success could not be verified. Check ChatGPT manually; do not blindly retry.', { status: 'outcome unknown' });

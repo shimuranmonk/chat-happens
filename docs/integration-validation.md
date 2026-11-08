@@ -35,7 +35,7 @@ For success, the adapter first accepts a new role=status/alert receipt exactly m
 
 Starting in alpha.5, deletion can also complete without such a notice. This fallback requires the exact confirmation submitted by the script to close, no other active overlay, the same visible history container, the target ID to remain absent, and every other previously discovered ordinary-chat ID to remain present continuously for at least 750 ms. At least one neighboring chat is required. The location must remain unchanged, or move from the deleted chat's own URL to the home page. Any interruption of those checks resets the stability interval.
 
-These are combined UI signals, not independent server-side verification. Sidebar disappearance or row disappearance alone never count as success. Archive still requires its explicit receipt. Uncertain outcomes stop the batch without retry.
+These are combined UI signals, not independent server-side verification. Sidebar disappearance or row disappearance alone never count as success. Starting in alpha.7, archiving can use the same stable-list evidence when its exact action menu closes; no native archive confirmation is expected. Uncertain outcomes stop the batch without retry.
 
 ## Implementation refinements to the PRD
 
@@ -80,3 +80,11 @@ A user reported a six-chat deletion batch with four successes and two skips. The
 Alpha.6 first looks up the selected ID among all currently loaded eligible ordinary-chat rows and briefly waits for transient rendering gaps. If its row is offscreen while the sidebar is visible, it scrolls that row into view, reacquires the exact ID and title, then performs the existing ownership and confirmation checks. Stop remains effective during this preparation. It never substitutes another row or adds to the selection. A genuinely unloaded or ambiguous target, failed visibility recovery, or missing row is still skipped. It does not search all account history or automatically retry already-submitted operations.
 
 Five added regression tests cover deletion-induced reflow, row redraw while scrolling, target disappearance, stop during scrolling, and transient unloading. All 49 local tests pass. The reported two skips still require retesting on the user's installation; viewport movement is a reproduced cause, not independently established as the exact cause of those two results.
+
+## Alpha.7 archiving verification
+
+A live single-chat archive test returned outcome unknown, and the user independently confirmed the conversation was present in Archived chats. The effect succeeded; the alpha.6 result verifier had still required an explicit archive success notice.
+
+Alpha.7 adds archive completion through combined UI evidence: the exact archive menu used by the adapter closes, no other active overlay remains, the same history root stays visible, the selected ID stays absent, every neighboring ordinary-chat ID remains, and location remains expected for the full stability interval. No neighboring evidence, missing history, replacement history, unexpected navigation, reappearing target, or an open menu leaves the outcome unknown. This verifies page behavior, not an independent account-wide archive lookup.
+
+All 57 local tests pass, including single and multiple toast-free archives and uncertainty cases. User-reported deletion testing has passed; archive reporting needs a single-chat retest on alpha.7, followed by multi-chat archive testing. Production remains pending.

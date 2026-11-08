@@ -69,8 +69,8 @@ test('unowned menu is never used', async () => {
   f.dom.window.close();
 });
 
-test('silent row disappearance is unknown and stops without retry', async () => {
-  const f = setup({ outcome: 'silent' });
+test('silent archive with a hidden sidebar is unknown and stops without retry', async () => {
+  const f = setup({ outcome: 'silent', afterSubmit: ({ root }) => { root.hidden = true; } });
   const result = await new BatchRunner().run(f.selection, 'archive', f.adapter);
   assert.equal(result[0].status, 'outcome unknown');
   assert.equal(result[1].status, 'stopped before processing');
@@ -78,7 +78,7 @@ test('silent row disappearance is unknown and stops without retry', async () => 
 });
 
 test('an old success toast cannot verify a later silent action', async () => {
-  const f = setup({ outcome: 'silent' });
+  const f = setup({ outcome: 'silent', afterSubmit: ({ root }) => { root.replaceChildren(); } });
   const old = f.doc.createElement('div'); old.setAttribute('role', 'status'); old.textContent = 'Chat archived'; f.doc.body.append(old);
   const result = await new BatchRunner().run(f.selection, 'archive', f.adapter);
   assert.equal(result[0].status, 'outcome unknown'); assert.equal(f.calls.length, 1);
@@ -324,5 +324,44 @@ test('transiently unloaded selected row can settle before processing', async () 
   const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
   assert.equal(result[0].status, 'succeeded');
   assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
+  f.dom.window.close();
+});
+
+test('archive without a success notice verifies stable menu closure and selected row removal', async () => {
+  const f = setup({ outcome: 'silent' });
+  const result = await new BatchRunner().run([f.selection[0]], 'archive', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.match(result[0].detail, /closed the archive menu/);
+  assert.deepEqual(f.calls, [{ id: ids[0], action: 'archive' }]);
+  assert.equal(f.items[1].owner.isConnected, true);
+  f.dom.window.close();
+});
+
+test('multiple toast-free archives process only the selected IDs', async () => {
+  const f = setup({ outcome: 'silent' });
+  const result = await new BatchRunner().run(f.selection.slice(0, 2), 'archive', f.adapter);
+  assert.deepEqual(result.map(x => x.status), ['succeeded', 'succeeded']);
+  assert.deepEqual(f.calls.map(x => x.id), ids.slice(0, 2));
+  assert.equal(f.items[2].owner.isConnected, true);
+  f.dom.window.close();
+});
+
+for (const [name, afterSubmit] of Object.entries(uncertainChanges).filter(([name]) => name !== 'confirmation stays open')) {
+  test(`toast-free archive stays unknown when ${name}`, async () => {
+    const f = setup({ outcome: 'silent', afterSubmit });
+    const result = await new BatchRunner().run(f.selection, 'archive', f.adapter);
+    assert.equal(result[0].status, 'outcome unknown');
+    assert.equal(result[1].status, 'stopped before processing');
+    assert.equal(f.calls.length, 1); f.dom.window.close();
+  });
+}
+
+test('an archive menu left open cannot count as completion', async () => {
+  const f = setup({ outcome: 'silent', afterSubmit: ({ doc }) => {
+    const menu = doc.createElement('div'); menu.id = `menu-${ids[0]}`; menu.setAttribute('role', 'menu'); menu.setAttribute('data-state', 'open');
+    doc.body.append(menu);
+  } });
+  const result = await new BatchRunner().run(f.selection, 'archive', f.adapter);
+  assert.equal(result[0].status, 'outcome unknown'); assert.equal(f.calls.length, 1);
   f.dom.window.close();
 });

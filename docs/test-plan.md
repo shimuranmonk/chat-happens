@@ -68,3 +68,17 @@ The suite now contains 44 tests. New tests verify stable toast-free deletion, un
 ## Alpha.6 batch visibility regression
 
 The suite now contains 49 tests. Added scenarios ensure a selected offscreen row is brought into view after an earlier deletion, a redrawn row is reacquired by exact ID, a disappearing target never causes substitution, Stop prevents submission during scrolling, and a transiently unloaded row can settle before processing. Live retest: review only the skipped chats from the earlier batch and confirm they remain intended targets before retrying; do not repeat successful deletions.
+
+## Alpha.7 archive live-test feedback
+
+The suite now contains 57 tests. Archive scenarios cover one and multiple toast-free archives, hidden or replaced history, lost neighbors, unexpected navigation, reappearing targets, and open menus. Old success notices still cannot substitute for current evidence.
+
+| Live check | Reported status |
+|---|---|
+| Single deletion | Passed by user report |
+| Multiple deletions | Passed after alpha.6 by user report |
+| Single archive effect | User confirmed the chat appears in Archived chats |
+| Single archive reporting | Alpha.6 reported unknown; alpha.7 retest pending |
+| Multiple archives | Pending |
+
+Do not mark archive testing or production complete until both remaining archive checks pass.
