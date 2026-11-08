@@ -1,6 +1,6 @@
 {
   "name": "chat-happens",
-  "version": "0.1.0-alpha.7",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Selective ChatGPT conversation cleanup userscript by Alapaap.net",

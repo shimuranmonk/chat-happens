@@ -1,6 +1,6 @@
 # Integration validation and implementation decisions
 
-Date: 2026-11-08. Status: experimental alpha, not production approved.
+Date: 2026-11-08. Current status: v0.1.0 release authorized after user-reported live deletion and archive tests. See [release validation](release-validation.md). The implementation history below records earlier assumptions and fixes.
 
 ## Official behavior
 
@@ -53,7 +53,7 @@ Automated fixture and UI tests, generated-script syntax check, and an actual-bro
 
 ## Release decision
 
-Keep this branch and its pull request in draft. Do not publish a production release until installation, disposable live archive/delete checks, browser compatibility, and failure-mode checks pass and are recorded here.
+The user has reported successful installation and single/multiple live deletion and archive tests, and authorized publication. Release v0.1.0 is scoped to the tested Chrome/Tampermonkey English interface. Historical pending notes below are superseded by the [release validation record](release-validation.md); broader compatibility remains unverified.
 
 ## Live-test feedback and alpha.3 correction
 

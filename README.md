@@ -12,32 +12,40 @@ Chat Happens aims to make that cleanup easier through a browser userscript.
 
 ## Project status
 
+**v0.1.0 — first stable release.** Single and multiple deletion and archiving workflows have passed user-reported live tests. The automated suite contains 57 passing tests.
+
+### Original planning note
+
 Early planning stage. No userscript implementation has been added yet. Kapoy isip pramis gyud. AI? Of course IO can use that but only at 80% as I do not want to get infected with brain rot.
 
 ## Planning documents
 
-Current stage: experimental implementation and testing. Production release is pending the manual validation gate.
+Current stage: v0.1.0 release. See the [release validation record](docs/release-validation.md) for scope, evidence, and limitations.
 
 - [Product definition — business challenge, intent, intent summary, PRD, and solution specification](docs/product-definition.md) — Draft for review.
 
-## Experimental userscript
+## Ready-to-install userscript
 
-The first implementation is available in [chat-happens.user.js](chat-happens.user.js). It adds manual selection, review, archive/delete confirmations, progress, stop, and per-conversation results. It is an experimental alpha, not a production release. Your original planning note above is retained as project history.
+[**Install Chat Happens**](https://raw.githubusercontent.com/shimuranmonk/chat-happens/main/chat-happens.user.js) · [Releases](https://github.com/shimuranmonk/chat-happens/releases)
 
-Only the inspected English ChatGPT web sidebar is targeted. Project chats and unfamiliar layouts are excluded. Native delete confirmation and live success receipts still require validation with disposable conversations. No real conversations were changed during development.
+Install Tampermonkey first, then open the installation link. If your browser displays text instead of an installation screen, use the copy-and-save steps below.
+
+Chat Happens provides manual selection, review, archive/delete confirmations, progress, Stop, and per-conversation results. It runs locally without a separate account, payments, telemetry, or usage limits in this release.
+
+This release targets the inspected English ChatGPT web sidebar. Project chats and unfamiliar layouts are excluded. Live testing was reported by the user in Chrome with Tampermonkey; other browser combinations have not been validated. The original planning note above is retained as project history.
 
 ## How to install and use Chat Happens
 
 You do not need to know how to code. Chat Happens adds a small cleanup panel to the ChatGPT website.
 
-**This is an early test version. Start with a separate test account or chats you created only for testing. Live testing is still pending.**
+**Start with a disposable chat while getting familiar with the controls. Always review your selected chats before confirming an action.**
 
 ### What you need
 
 - A desktop browser with [Tampermonkey](https://www.tampermonkey.net/) installed. Tampermonkey is a browser extension that lets small add-ons like Chat Happens run on a website.
 - ChatGPT open at [chatgpt.com](https://chatgpt.com/), with its interface set to English.
 
-This version runs in your browser. It does not add buttons to the ChatGPT desktop or phone app. Browser compatibility is still being tested.
+This version runs in your browser. It does not add buttons to the ChatGPT desktop or phone app. This first release was live-tested in Chrome with Tampermonkey; other browser combinations remain unverified.
 
 ### 1. Install Tampermonkey
 
@@ -51,22 +59,24 @@ If Tampermonkey says it needs permission to run userscripts, follow its [officia
 
 1. Open [the Chat Happens script](chat-happens.user.js) in this repository.
 2. Click **Raw** to display the complete script by itself.
-3. If Tampermonkey opens an installation screen, check that the name is **Chat Happens (experimental)** and the author is **Alapaap.net**, then choose **Install**.
+3. If Tampermonkey opens an installation screen, check that the name is **Chat Happens** and the author is **Alapaap.net**, then choose **Install**.
 4. If you see a page of text instead, select and copy all of it. Click the Tampermonkey icon, choose **Create a new script**, select all the sample text in its editor, and replace it with what you copied. Choose **File → Save**.
-5. Check that **Chat Happens (experimental)** is switched on in Tampermonkey.
+5. Check that **Chat Happens** is switched on in Tampermonkey.
 
 You are copying a ready-made add-on; you do not need to edit its contents. Do not paste it into a browser console.
 
 ### Updating an existing installation
 
-Open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and copy the complete text. Open Tampermonkey's **Dashboard**, click your existing **Chat Happens (experimental)** entry, replace all its editor contents with the copied text, and choose **File → Save**. Refresh ChatGPT afterward. This updates the existing entry; you do not need a second copy.
+For an existing experimental installation, open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and copy the complete text. Open Tampermonkey's **Dashboard**, open your existing **Chat Happens (experimental)** entry, replace all its editor contents with the copied text, and choose **File → Save**. Its name becomes **Chat Happens**. Refresh ChatGPT afterward. Update that existing entry rather than keeping both editions enabled.
+
+The stable script includes update and download addresses pointing to the main release channel. Tampermonkey can check them according to its update settings; you can also update manually using the steps above.
 
 ### 3. Open cleanup mode
 
-1. Open ChatGPT in the same browser and sign in to your test account.
+1. Open ChatGPT in the same browser and sign in to your account.
 2. Refresh the ChatGPT page if it was already open.
 3. Open the sidebar that lists your conversations.
-4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.7**.
+4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0**.
 5. Click **Enter cleanup mode**. Small checkboxes should appear beside supported chats.
 
 If checkboxes do not appear, leave your chats unchanged and check the troubleshooting tips below.
@@ -118,7 +128,7 @@ Refreshing or closing the page clears the selection and results. Cleanup does no
 
 - **No cleanup panel:** Check that Tampermonkey and Chat Happens are enabled, then refresh the ChatGPT website.
 - **No checkboxes:** Open the conversation sidebar and check that ChatGPT is in English. Project chats and unsupported layouts are excluded.
-- **Cleanup stops unexpectedly:** Read the result beside the affected chat. This early version stops when it cannot confidently identify a control or confirm an outcome.
+- **Cleanup stops unexpectedly:** Read the result beside the affected chat. Chat Happens stops when it cannot confidently identify a control or confirm an outcome.
 - **Still stuck:** [Report an issue](https://github.com/shimuranmonk/chat-happens/issues). Include your browser, Tampermonkey version, the Chat Happens version shown in the panel, and the message shown. Leave out private chat contents.
 
 ## For developers: build and test

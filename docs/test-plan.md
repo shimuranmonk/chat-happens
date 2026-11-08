@@ -1,6 +1,6 @@
 # Test plan
 
-Status: automated and simulated-browser checks completed; live destructive checks pending.
+Status: v0.1.0 release validation completed within the reported test scope. See [release validation](release-validation.md). Historical test gates and development notes below are retained for traceability.
 
 ## Acceptance coverage
 
@@ -35,7 +35,7 @@ npm run preview
 
 Open http://127.0.0.1:4173. All rows are simulated. Select one of the duplicate-title chats, review its ID, archive it, and verify that the other duplicate remains. Reload restores all samples. The server binds only to the local machine and serves an explicit file allowlist.
 
-## Manual release gate — not yet passed
+## Manual release checklist — completed by user report for the core workflows
 
 Use a dedicated test account or explicitly disposable conversations. Never use valuable history to validate this alpha.
 
@@ -82,3 +82,7 @@ The suite now contains 57 tests. Archive scenarios cover one and multiple toast-
 | Multiple archives | Pending |
 
 Do not mark archive testing or production complete until both remaining archive checks pass.
+
+## Final live-test disposition — v0.1.0
+
+The user reported single and multiple deletion and archive tests passing, then authorized publication. This supersedes earlier pending statuses in the historical notes. Automated suite: 57 passing tests. Broader browser, account, and service-condition coverage remains limited; see [release validation](release-validation.md).
