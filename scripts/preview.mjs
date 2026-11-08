@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-const paths = new Map([['/', 'tests/demo.html'], ['/src/core.js', 'src/core.js'], ['/src/adapter.js', 'src/adapter.js'], ['/src/ui.js', 'src/ui.js']]);
+const paths = new Map([['/', 'tests/demo.html'], ['/src/version.js', 'src/version.js'], ['/src/core.js', 'src/core.js'], ['/src/adapter.js', 'src/adapter.js'], ['/src/ui.js', 'src/ui.js']]);
 createServer(async (req, res) => {
   const file = paths.get(req.url);
   if (!file) { res.writeHead(404); res.end('Not found'); return; }

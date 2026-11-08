@@ -6,7 +6,7 @@ import { fixture, ids } from './fixture.mjs';
 
 function setup(options) {
   const f = fixture(options);
-  const adapter = new ChatGPTAdapter(f.doc, { timeout: 40, interval: 2, isVisible: f.visible });
+  const adapter = new ChatGPTAdapter(f.doc, { timeout: 80, interval: 2, settle: 10, isVisible: f.visible });
   return { ...f, adapter, selection: adapter.discover().map(({ id, title }) => ({ id, title })) };
 }
 
@@ -234,5 +234,41 @@ test('disabled native Delete chat button is never submitted', async () => {
   const f = setup({ nativeLayout: 'plain', disabledConfirm: true });
   const result = await new BatchRunner().run(f.selection, 'delete', f.adapter);
   assert.equal(result[0].status, 'failed'); assert.equal(f.calls.length, 0);
+  f.dom.window.close();
+});
+
+test('deletion without a toast succeeds only after stable dialog closure and exact row removal', async () => {
+  const f = setup({ nativeLayout: 'plain', outcome: 'silent' });
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.match(result[0].detail, /neighboring chats stayed in place/);
+  assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
+  f.dom.window.close();
+});
+
+const uncertainChanges = {
+  'sidebar hidden': ({ root }) => { root.hidden = true; },
+  'neighbors disappear': ({ root }) => { root.replaceChildren(); },
+  'history root replaced': ({ root }) => { root.replaceWith(root.cloneNode(true)); },
+  'confirmation stays open': ({ doc, dialog }) => { doc.body.append(dialog); },
+  'unexpected navigation': ({ doc }) => { doc.defaultView.history.pushState({}, '', '/settings'); },
+  'target reappears': ({ root, owner }) => { setTimeout(() => root.prepend(owner), 4); }
+};
+for (const [name, afterSubmit] of Object.entries(uncertainChanges)) {
+  test(`toast-free delete stays unknown when ${name}`, async () => {
+    const f = setup({ nativeLayout: 'plain', outcome: 'silent', afterSubmit });
+    const result = await new BatchRunner().run(f.selection, 'delete', f.adapter);
+    assert.equal(result[0].status, 'outcome unknown');
+    assert.equal(result[1].status, 'stopped before processing');
+    assert.equal(f.calls.length, 1);
+    f.dom.window.close();
+  });
+}
+
+test('no-toast deletion with no neighboring evidence remains unknown', async () => {
+  const f = setup({ nativeLayout: 'plain', outcome: 'silent' });
+  f.items[1].owner.remove(); f.items[2].owner.remove();
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'outcome unknown'); assert.equal(f.calls.length, 1);
   f.dom.window.close();
 });

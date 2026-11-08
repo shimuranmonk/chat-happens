@@ -31,7 +31,11 @@ The native delete confirmation layout has now been reported through a user's liv
 
 An end-to-end live deletion and actual service success receipts are still awaiting confirmation. No real chat was deleted by the agent while implementing this correction.
 
-For success, the adapter requires a new role=status/alert receipt exactly matching “Chat archived”, “Conversation archived”, “Chat deleted”, or “Conversation deleted” (optional punctuation), plus disappearance of the ID while the history remains visible. Those receipt strings are fixture assumptions awaiting live validation. Missing or differing receipts produce outcome unknown and stop the batch. Sidebar disappearance alone never counts as success.
+For success, the adapter first accepts a new role=status/alert receipt exactly matching “Chat archived”, “Conversation archived”, “Chat deleted”, or “Conversation deleted” (optional punctuation), together with disappearance of the selected ID while history remains visible.
+
+Starting in alpha.5, deletion can also complete without such a notice. This fallback requires the exact confirmation submitted by the script to close, no other active overlay, the same visible history container, the target ID to remain absent, and every other previously discovered ordinary-chat ID to remain present continuously for at least 750 ms. At least one neighboring chat is required. The location must remain unchanged, or move from the deleted chat's own URL to the home page. Any interruption of those checks resets the stability interval.
+
+These are combined UI signals, not independent server-side verification. Sidebar disappearance or row disappearance alone never count as success. Archive still requires its explicit receipt. Uncertain outcomes stop the batch without retry.
 
 ## Implementation refinements to the PRD
 
@@ -62,3 +66,9 @@ The native delete confirmation can temporarily hide the underlying sidebar for a
 ## Alpha.4 native confirmation regression
 
 The screenshot-reported plain-text layout and “Delete chat” label are represented in the fixture suite. Tests verify automatic confirmation once, rejection of another title, rejection of a disabled button, and preservation of an unselected duplicate-title chat. All 35 automated tests pass locally. Live success verification remains a release gate.
+
+## Alpha.5 result reporting and visible version
+
+A user reported that a single conversation was successfully deleted, but the script reported outcome unknown because its expected success notice was not detected. The alpha.5 fallback above covers that UI completion pattern while retaining unknown results for an unstable list, missing neighbors, hidden/replaced history, an open confirmation, reappearing target, or unexpected navigation. Agent-run tests use simulated conversations; validation of the revised path on the user's installation remains pending.
+
+The panel now shows the installed version. The UI and userscript header share src/version.js, and a regression test checks that they match package metadata. All 44 local automated tests pass.

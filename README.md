@@ -66,7 +66,7 @@ Open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and 
 1. Open ChatGPT in the same browser and sign in to your test account.
 2. Refresh the ChatGPT page if it was already open.
 3. Open the sidebar that lists your conversations.
-4. Look for the **Chat Happens** panel near the bottom-right corner.
+4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.5**.
 5. Click **Enter cleanup mode**. Small checkboxes should appear beside supported chats.
 
 If checkboxes do not appear, leave your chats unchanged and check the troubleshooting tips below.
@@ -104,7 +104,7 @@ Open **Batch results** to see what happened to each chat:
 
 | Result | What it means |
 |---|---|
-| Succeeded | Chat Happens saw the expected confirmation from ChatGPT and the chat left the displayed list. |
+| Succeeded | Chat Happens saw a success notice, or verified that the delete confirmation closed and that specific chat stayed removed while neighboring chats remained. This verifies the page result, not deletion from OpenAI's servers. |
 | Skipped | The chat could no longer be found reliably. No action was started for that chat. |
 | Failed | A check failed before the action was submitted. Read the accompanying explanation. |
 | Stopped before processing | Cleanup stopped before this chat was processed. |
@@ -119,7 +119,7 @@ Refreshing or closing the page clears the selection and results. Cleanup does no
 - **No cleanup panel:** Check that Tampermonkey and Chat Happens are enabled, then refresh the ChatGPT website.
 - **No checkboxes:** Open the conversation sidebar and check that ChatGPT is in English. Project chats and unsupported layouts are excluded.
 - **Cleanup stops unexpectedly:** Read the result beside the affected chat. This early version stops when it cannot confidently identify a control or confirm an outcome.
-- **Still stuck:** [Report an issue](https://github.com/shimuranmonk/chat-happens/issues). Include your browser, Tampermonkey version, and the message shown. Leave out private chat contents.
+- **Still stuck:** [Report an issue](https://github.com/shimuranmonk/chat-happens/issues). Include your browser, Tampermonkey version, the Chat Happens version shown in the panel, and the message shown. Leave out private chat contents.
 
 ## For developers: build and test
 

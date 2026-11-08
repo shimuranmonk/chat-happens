@@ -1,5 +1,6 @@
 import { BatchRunner } from './core.js';
 import { ChatGPTAdapter } from './adapter.js';
+import { SCRIPT_VERSION } from './version.js';
 
 export function mountChatHappens(doc) {
   if (doc.getElementById('chat-happens')) return;
@@ -27,7 +28,7 @@ export function mountChatHappens(doc) {
     #selected-list{list-style:none;max-height:160px;overflow:auto;margin:8px 0 0;padding:0}#selected-list li{padding:7px 9px;margin:5px 0;border-left:3px solid #81d5ac;border-radius:4px;background:#263e36;overflow-wrap:anywhere}#selected-list small{font-size:11px}
   </style>
   <section aria-label="Chat Happens cleanup">
-    <h2>Chat Happens</h2><div class="sub">Alapaap.net · Experimental preview</div>
+    <h2>Chat Happens</h2><div class="sub">Alapaap.net · Experimental preview · <span id="version"></span></div>
     <p id="message" role="status" aria-live="polite">Open the ChatGPT sidebar, then enter cleanup mode.</p>
     <div id="selection" hidden><strong id="count">0 selected</strong><ul id="selected-list" aria-label="Selected conversations" hidden></ul><div class="actions"><button id="all">Select displayed</button><button id="clear">Clear selection</button><button id="review">Review selection</button></div></div>
     <div class="actions"><button id="toggle">Enter cleanup mode</button><button id="stop" hidden>Stop processing</button></div>
@@ -36,6 +37,7 @@ export function mountChatHappens(doc) {
   <dialog data-ch-owned aria-labelledby="review-heading"><h2 id="review-heading">Review selection</h2><p id="review-copy"></p><ol id="review-list"></ol><label id="ack-wrap" hidden><input id="ack" type="checkbox"> I understand that deletion is permanent and cannot be undone.</label><div class="actions"><button id="archive">Archive selected</button><button id="delete" class="danger">Delete selected</button><button id="confirm" hidden>Confirm</button><button id="cancel">Cancel</button></div></dialog>`;
   doc.body.append(host);
   const $ = id => shadow.getElementById(id);
+  $('version').textContent = `v${SCRIPT_VERSION}`;
   const adapter = new ChatGPTAdapter(doc);
   const runner = new BatchRunner({ delay: 750 });
   const selected = new Map();

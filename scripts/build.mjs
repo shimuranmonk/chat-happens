@@ -1,9 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
-const parts = await Promise.all(['core', 'adapter', 'ui'].map(name => readFile(new URL(`../src/${name}.js`, import.meta.url), 'utf8')));
+import { SCRIPT_VERSION } from '../src/version.js';
+const parts = await Promise.all(['version', 'core', 'adapter', 'ui'].map(name => readFile(new URL(`../src/${name}.js`, import.meta.url), 'utf8')));
 const header = `// ==UserScript==
 // @name         Chat Happens (experimental)
 // @namespace    https://alapaap.net/
-// @version      0.1.0-alpha.4
+// @version      ${SCRIPT_VERSION}
 // @description  Selectively archive or delete displayed ChatGPT conversations. Experimental; validate with disposable chats first.
 // @author       Alapaap.net
 // @homepageURL  https://github.com/shimuranmonk/chat-happens

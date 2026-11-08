@@ -46,7 +46,7 @@ Use a dedicated test account or explicitly disposable conversations. Never use v
 5. Inspect the native delete confirmation against the strict adapter contract. If it differs, cancel and update the adapter and fixtures before proceeding.
 6. Delete one explicitly disposable chat after human confirmation; verify in the normal account UI. Confirm the other duplicate remains.
 7. Test stop, missing rows, sidebar closure, navigation, and a simulated connection failure. Check results against actual account state; never retry an unknown result blindly.
-8. Validate observed success receipt wording; the alpha intentionally stops if that wording is absent or unfamiliar.
+8. Validate actual success receipts and the toast-free deletion path. Without a receipt, require a closed native confirmation and a stable history list retaining every neighboring chat while the selected ID stays absent. Verify the result independently in ChatGPT.
 9. Record outcomes and resolve issues, rerun automated checks, then repeat affected manual checks before proposing production.
 
 ## Known coverage limits
@@ -60,3 +60,7 @@ The suite now contains 32 tests. Added cases cover hidden/closed/inert dialog re
 ## Alpha.4 native delete confirmation
 
 The suite now contains 35 tests, including the live-reported plain-text title message and Delete chat button. A matching dialog is confirmed automatically after the batch confirmation; a different title or disabled button is never confirmed. The user still needs to validate an end-to-end result with a disposable conversation.
+
+## Alpha.5 completion evidence and version
+
+The suite now contains 44 tests. New tests verify stable toast-free deletion, unknown results when the sidebar hides or is replaced, loss of neighbors, an open confirmation, unexpected navigation, a reappearing target, and lack of any neighboring evidence. A version consistency test compares the displayed version, userscript header, and package metadata. Live validation of the updated reporting remains pending.

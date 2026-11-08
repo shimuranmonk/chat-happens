@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mountChatHappens } from '../src/ui.js';
 import { fixture, ids } from './fixture.mjs';
+import { SCRIPT_VERSION } from '../src/version.js';
+import { readFileSync } from 'node:fs';
 
 function setup() {
   const f = fixture();
@@ -83,5 +85,15 @@ test('selection list renders untrusted titles as text', () => {
   f.$('toggle').click(); f.items[0].row.querySelector('input').click();
   assert.equal(f.$('selected-list').querySelector('img'), null);
   assert.match(f.$('selected-list').textContent, /<img/);
+  f.close();
+});
+
+test('panel version matches the installable script and package version', () => {
+  const f = setup();
+  assert.equal(f.$('version').textContent, `v${SCRIPT_VERSION}`);
+  const built = readFileSync(new URL('../chat-happens.user.js', import.meta.url), 'utf8');
+  assert.equal(built.match(/^\/\/ @version\s+(\S+)/m)[1], SCRIPT_VERSION);
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.version, SCRIPT_VERSION);
   f.close();
 });

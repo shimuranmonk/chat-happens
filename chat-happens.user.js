@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat Happens (experimental)
 // @namespace    https://alapaap.net/
-// @version      0.1.0-alpha.4
+// @version      0.1.0-alpha.5
 // @description  Selectively archive or delete displayed ChatGPT conversations. Experimental; validate with disposable chats first.
 // @author       Alapaap.net
 // @homepageURL  https://github.com/shimuranmonk/chat-happens
@@ -14,6 +14,8 @@
 
 (() => {
 'use strict';
+const SCRIPT_VERSION = '0.1.0-alpha.5';
+
 class CleanupError extends Error {
   constructor(message, { status = 'failed', halt = true } = {}) {
     super(message);
@@ -76,10 +78,11 @@ class BatchRunner {
 // UI contract inspected on ChatGPT's English web interface, 2026-11-08.
 // No internal endpoints, auth tokens, or network interception are used.
 class ChatGPTAdapter {
-  constructor(doc, { timeout = 7000, interval = 100, isVisible } = {}) {
+  constructor(doc, { timeout = 7000, interval = 100, settle = 750, isVisible } = {}) {
     this.doc = doc;
     this.timeout = timeout;
     this.interval = interval;
+    this.settle = settle;
     this.isVisible = isVisible || (el => {
       if (!el?.isConnected || el.closest('[hidden], [aria-hidden="true"]') || !el.getClientRects().length) return false;
       const box = el.getBoundingClientRect();
@@ -162,6 +165,10 @@ class ChatGPTAdapter {
     const target = this.discover().find(x => x.id === item.id);
     if (!target) throw new CleanupError('Conversation is no longer displayed or its identity is ambiguous.', { status: 'skipped', halt: false });
     if (target.title !== item.title) throw new CleanupError('Conversation title changed. Review the selection again.');
+    const initialHistory = this.history();
+    const initialUrl = this.doc.location.href;
+    const initialPath = this.doc.location.pathname;
+    const neighbors = this.discover({ visibleOnly: false }).filter(x => x.id !== item.id).map(x => x.id);
     const blocking = this.activeOverlays()[0];
     if (blocking) {
       const kind = blocking.getAttribute('role') === 'menu' ? 'menu' : 'dialog';
@@ -176,6 +183,7 @@ class ChatGPTAdapter {
     this.activate(target.button);
     let dispatched = false;
     let menu;
+    let confirmationDialog;
     try {
       menu = await this.waitFor(() => {
         const control = this.doc.getElementById(target.button.getAttribute('aria-controls'));
@@ -243,15 +251,36 @@ class ChatGPTAdapter {
             throw new CleanupError('Stopped before native delete confirmation. Close it manually.');
           }
           dispatched = true;
+          confirmationDialog = dialog;
           confirm[0].click();
         }
+        let settledSince = null;
         const success = await this.waitFor(() => {
           const failure = signals.find(x => /failed|error|try again|sign in|log in|too many|rate limit/i.test(x));
           if (failure) throw new CleanupError(`ChatGPT reported: ${failure}`, { status: 'outcome unknown' });
           const expected = action === 'archive' ? /^(Chat|Conversation) archived[.!]?$/i : /^(Chat|Conversation) deleted[.!]?$/i;
           const receipt = signals.find(x => expected.test(x));
           // Row disappearance by itself is insufficient (sidebar closure / virtualization).
-          return receipt && this.isVisible(this.history()) && !this.discover({ visibleOnly: false }).some(x => x.id === item.id) ? receipt : null;
+          const history = this.history();
+          const currentIds = new Set(this.discover({ visibleOnly: false }).map(x => x.id));
+          const removed = !currentIds.has(item.id);
+          const historyVisible = history && this.isVisible(history);
+          if (receipt && historyVisible && removed) return receipt;
+          // Some ChatGPT layouts complete deletion without a status toast.
+          // Require the exact dialog we submitted to close, the same visible
+          // history root, every neighboring ID to remain, and a stable interval.
+          const locationExpected = this.doc.location.href === initialUrl ||
+            (initialPath.replace(/\/$/, '') === `/c/${item.id}` && this.doc.location.pathname === '/');
+          const overlays = this.activeOverlays();
+          const completedInPage = action === 'delete' && confirmationDialog &&
+            (!confirmationDialog.isConnected || !overlays.includes(confirmationDialog)) &&
+            overlays.length === 0 && history === initialHistory && historyVisible &&
+            removed && neighbors.length > 0 && neighbors.every(id => currentIds.has(id)) && locationExpected;
+          if (!completedInPage) { settledSince = null; return null; }
+          if (settledSince === null) settledSince = Date.now();
+          return Date.now() - settledSince >= this.settle
+            ? 'ChatGPT closed the delete confirmation and removed this chat from the sidebar; neighboring chats stayed in place.'
+            : null;
         });
         if (!success) throw new CleanupError('Action was submitted, but success could not be verified. Check ChatGPT manually; do not blindly retry.', { status: 'outcome unknown' });
         return { status: 'succeeded', detail: success };
@@ -293,7 +322,7 @@ function mountChatHappens(doc) {
     #selected-list{list-style:none;max-height:160px;overflow:auto;margin:8px 0 0;padding:0}#selected-list li{padding:7px 9px;margin:5px 0;border-left:3px solid #81d5ac;border-radius:4px;background:#263e36;overflow-wrap:anywhere}#selected-list small{font-size:11px}
   </style>
   <section aria-label="Chat Happens cleanup">
-    <h2>Chat Happens</h2><div class="sub">Alapaap.net · Experimental preview</div>
+    <h2>Chat Happens</h2><div class="sub">Alapaap.net · Experimental preview · <span id="version"></span></div>
     <p id="message" role="status" aria-live="polite">Open the ChatGPT sidebar, then enter cleanup mode.</p>
     <div id="selection" hidden><strong id="count">0 selected</strong><ul id="selected-list" aria-label="Selected conversations" hidden></ul><div class="actions"><button id="all">Select displayed</button><button id="clear">Clear selection</button><button id="review">Review selection</button></div></div>
     <div class="actions"><button id="toggle">Enter cleanup mode</button><button id="stop" hidden>Stop processing</button></div>
@@ -302,6 +331,7 @@ function mountChatHappens(doc) {
   <dialog data-ch-owned aria-labelledby="review-heading"><h2 id="review-heading">Review selection</h2><p id="review-copy"></p><ol id="review-list"></ol><label id="ack-wrap" hidden><input id="ack" type="checkbox"> I understand that deletion is permanent and cannot be undone.</label><div class="actions"><button id="archive">Archive selected</button><button id="delete" class="danger">Delete selected</button><button id="confirm" hidden>Confirm</button><button id="cancel">Cancel</button></div></dialog>`;
   doc.body.append(host);
   const $ = id => shadow.getElementById(id);
+  $('version').textContent = `v${SCRIPT_VERSION}`;
   const adapter = new ChatGPTAdapter(doc);
   const runner = new BatchRunner({ delay: 750 });
   const selected = new Map();

@@ -2,10 +2,11 @@ import { CleanupError } from './core.js';
 // UI contract inspected on ChatGPT's English web interface, 2026-11-08.
 // No internal endpoints, auth tokens, or network interception are used.
 export class ChatGPTAdapter {
-  constructor(doc, { timeout = 7000, interval = 100, isVisible } = {}) {
+  constructor(doc, { timeout = 7000, interval = 100, settle = 750, isVisible } = {}) {
     this.doc = doc;
     this.timeout = timeout;
     this.interval = interval;
+    this.settle = settle;
     this.isVisible = isVisible || (el => {
       if (!el?.isConnected || el.closest('[hidden], [aria-hidden="true"]') || !el.getClientRects().length) return false;
       const box = el.getBoundingClientRect();
@@ -88,6 +89,10 @@ export class ChatGPTAdapter {
     const target = this.discover().find(x => x.id === item.id);
     if (!target) throw new CleanupError('Conversation is no longer displayed or its identity is ambiguous.', { status: 'skipped', halt: false });
     if (target.title !== item.title) throw new CleanupError('Conversation title changed. Review the selection again.');
+    const initialHistory = this.history();
+    const initialUrl = this.doc.location.href;
+    const initialPath = this.doc.location.pathname;
+    const neighbors = this.discover({ visibleOnly: false }).filter(x => x.id !== item.id).map(x => x.id);
     const blocking = this.activeOverlays()[0];
     if (blocking) {
       const kind = blocking.getAttribute('role') === 'menu' ? 'menu' : 'dialog';
@@ -102,6 +107,7 @@ export class ChatGPTAdapter {
     this.activate(target.button);
     let dispatched = false;
     let menu;
+    let confirmationDialog;
     try {
       menu = await this.waitFor(() => {
         const control = this.doc.getElementById(target.button.getAttribute('aria-controls'));
@@ -169,15 +175,36 @@ export class ChatGPTAdapter {
             throw new CleanupError('Stopped before native delete confirmation. Close it manually.');
           }
           dispatched = true;
+          confirmationDialog = dialog;
           confirm[0].click();
         }
+        let settledSince = null;
         const success = await this.waitFor(() => {
           const failure = signals.find(x => /failed|error|try again|sign in|log in|too many|rate limit/i.test(x));
           if (failure) throw new CleanupError(`ChatGPT reported: ${failure}`, { status: 'outcome unknown' });
           const expected = action === 'archive' ? /^(Chat|Conversation) archived[.!]?$/i : /^(Chat|Conversation) deleted[.!]?$/i;
           const receipt = signals.find(x => expected.test(x));
           // Row disappearance by itself is insufficient (sidebar closure / virtualization).
-          return receipt && this.isVisible(this.history()) && !this.discover({ visibleOnly: false }).some(x => x.id === item.id) ? receipt : null;
+          const history = this.history();
+          const currentIds = new Set(this.discover({ visibleOnly: false }).map(x => x.id));
+          const removed = !currentIds.has(item.id);
+          const historyVisible = history && this.isVisible(history);
+          if (receipt && historyVisible && removed) return receipt;
+          // Some ChatGPT layouts complete deletion without a status toast.
+          // Require the exact dialog we submitted to close, the same visible
+          // history root, every neighboring ID to remain, and a stable interval.
+          const locationExpected = this.doc.location.href === initialUrl ||
+            (initialPath.replace(/\/$/, '') === `/c/${item.id}` && this.doc.location.pathname === '/');
+          const overlays = this.activeOverlays();
+          const completedInPage = action === 'delete' && confirmationDialog &&
+            (!confirmationDialog.isConnected || !overlays.includes(confirmationDialog)) &&
+            overlays.length === 0 && history === initialHistory && historyVisible &&
+            removed && neighbors.length > 0 && neighbors.every(id => currentIds.has(id)) && locationExpected;
+          if (!completedInPage) { settledSince = null; return null; }
+          if (settledSince === null) settledSince = Date.now();
+          return Date.now() - settledSince >= this.settle
+            ? 'ChatGPT closed the delete confirmation and removed this chat from the sidebar; neighboring chats stayed in place.'
+            : null;
         });
         if (!success) throw new CleanupError('Action was submitted, but success could not be verified. Check ChatGPT manually; do not blindly retry.', { status: 'outcome unknown' });
         return { status: 'succeeded', detail: success };

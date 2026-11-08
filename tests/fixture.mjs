@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 export const ids = [1, 2, 3].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`);
 
-export function fixture({ outcome = 'success', mismatch = false, nativeMismatch = false, nativeLayout = 'legacy', disabledConfirm = false } = {}) {
+export function fixture({ outcome = 'success', mismatch = false, nativeMismatch = false, nativeLayout = 'legacy', disabledConfirm = false, afterSubmit } = {}) {
   const dom = new JSDOM('<body><aside id="browser-sidebar-popover"></aside></body>', { url: 'https://chatgpt.com/', pretendToBeVisual: true });
   const doc = dom.window.document;
   dom.window.PointerEvent ||= dom.window.MouseEvent;
@@ -27,9 +27,11 @@ export function fixture({ outcome = 'success', mismatch = false, nativeMismatch 
     row.append(link, button); owner.append(row); root.append(owner);
     const complete = action => {
       calls.push({ id, action });
-      [...doc.querySelectorAll('[role="dialog"]')].find(el => el !== root)?.remove();
+      const dialog = [...doc.querySelectorAll('[role="dialog"]')].find(el => el !== root);
+      dialog?.remove();
       if (outcome === 'throw') throw new Error('Disconnected');
       if (outcome !== 'failure') owner.remove();
+      afterSubmit?.({ doc, root, owner, dialog });
       if (outcome !== 'silent') {
         const toast = doc.createElement('div');
         toast.setAttribute('role', 'status');
