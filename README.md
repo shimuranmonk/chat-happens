@@ -12,7 +12,7 @@ Chat Happens aims to make that cleanup easier through a browser userscript.
 
 ## Project status
 
-Early planning stage. No userscript implementation has been added yet.
+Early planning stage. No userscript implementation has been added yet. Kapoy isip pramis gyud. AI? Of course IO can use that but only at 80% as I do not want to get infected with brain rot.
 
 ## Credits
 
