@@ -10,7 +10,7 @@ Status: automated and simulated-browser checks completed; live destructive check
 | FR-02, FR-05 | Adapter tests stable IDs, duplicate titles, hidden rows, reordered rows, project URLs, origin and owner mismatch, duplicate rendered identities. |
 | FR-06 | Review lists title plus full ID; untrusted titles render as text. |
 | FR-07 | Fixture archive targets one selected ID and requires a new explicit success receipt plus row removal. |
-| FR-08 | UI deletion acknowledgement; fixture native-dialog title matching. Actual native delete dialog remains unverified. |
+| FR-08 | UI deletion acknowledgement; fixture native-dialog title matching. Screenshot-reported native layout is covered in fixtures; end-to-end live success remains pending. |
 | FR-09, FR-12 | Runner reports each item; browser simulation displays progress and per-item results. |
 | FR-10 | Stop during an in-flight operation allows settlement and prevents later operations; stop between menu opening and action prevents submission. |
 | FR-11 | Missing item skips; changed title, mismatched menu, service error, exception and silent removal halt conservatively. Old success toast cannot verify a later operation. |
@@ -56,3 +56,7 @@ Fixtures model the observed row/menu contract, not the entire ChatGPT applicatio
 ## Alpha.3 regression coverage
 
 The suite now contains 32 tests. Added cases cover hidden/closed/inert dialog remnants, truly open dialog/alert/menu blockers, a sidebar exposed as a dialog, and a native deletion confirmation that temporarily hides the underlying sidebar. The selection-visibility tests also cover title/ID lists, row marking, and checkbox recovery after a page redraw. These simulated checks do not replace the manual release gate above.
+
+## Alpha.4 native delete confirmation
+
+The suite now contains 35 tests, including the live-reported plain-text title message and Delete chat button. A matching dialog is confirmed automatically after the batch confirmation; a different title or disabled button is never confirmed. The user still needs to validate an end-to-end result with a disposable conversation.

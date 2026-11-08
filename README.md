@@ -92,6 +92,8 @@ From the review screen, choose one action:
 
 Read the next screen and check the action and number of chats. For deletion, you must also tick the box acknowledging that deletion is permanent. Click the confirmation button only when the list is correct. **Cancel** closes the review without starting cleanup.
 
+After your final confirmation in Chat Happens, the script handles ChatGPT's own **Delete chat** confirmation for each matching selected chat. You should not have to click Delete separately for every chat. If it cannot verify the dialog, it stops and leaves the dialog open for you to close.
+
 ### 6. Watch the progress
 
 Keep the page open and avoid using ChatGPT while cleanup is running. The panel shows progress and a **Stop processing** button.

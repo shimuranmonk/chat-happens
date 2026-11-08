@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 export const ids = [1, 2, 3].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`);
 
-export function fixture({ outcome = 'success', mismatch = false, nativeMismatch = false } = {}) {
+export function fixture({ outcome = 'success', mismatch = false, nativeMismatch = false, nativeLayout = 'legacy', disabledConfirm = false } = {}) {
   const dom = new JSDOM('<body><aside id="browser-sidebar-popover"></aside></body>', { url: 'https://chatgpt.com/', pretendToBeVisual: true });
   const doc = dom.window.document;
   dom.window.PointerEvent ||= dom.window.MouseEvent;
@@ -57,8 +57,10 @@ export function fixture({ outcome = 'success', mismatch = false, nativeMismatch 
           const dialog = doc.createElement('div');
           dialog.setAttribute('role', 'dialog');
           const heading = doc.createElement('h2'); heading.textContent = 'Delete chat?';
-          const quote = doc.createElement('strong'); quote.textContent = nativeMismatch ? 'Another conversation' : title;
-          const confirm = doc.createElement('button'); confirm.textContent = 'Delete'; confirm.onclick = () => complete(action);
+          const quote = doc.createElement(nativeLayout === 'plain' ? 'p' : 'strong');
+          const targetTitle = nativeMismatch ? 'Another conversation' : title;
+          quote.textContent = nativeLayout === 'plain' ? `This will permanently delete ${targetTitle}. This can't be undone.` : targetTitle;
+          const confirm = doc.createElement('button'); confirm.textContent = nativeLayout === 'plain' ? 'Delete chat' : 'Delete'; confirm.disabled = disabledConfirm; confirm.onclick = () => complete(action);
           dialog.append(heading, quote, confirm); doc.body.append(dialog);
         };
         menu.append(choice);

@@ -27,7 +27,9 @@ The menu was opened for inspection and closed without selecting an action. No us
 
 ## Conservative unverified contracts
 
-The native delete dialog and actual service success receipts were **not inspected by performing destructive actions**. The implementation requires a single native dialog headed “Delete chat?” or “Delete conversation?”, the expected title in a strong/b element, and exactly one Delete button. Any mismatch stops before submitting the native confirmation; close the dialog manually.
+The native delete confirmation layout has now been reported through a user's live-test screenshot. Alpha.4 supports the heading “Delete chat?”, the exact plain-text message “This will permanently delete <selected title>. This can't be undone.”, and the button “Delete chat”. It also retains the earlier emphasized-title layout with a “Delete” button. Only one visible, enabled confirmation button is accepted. The selected conversation ID, title, and originating action button are revalidated before submission. The script automatically submits a matching native confirmation after the user's own batch confirmation; no extra per-chat click is intended. Unrecognized or mismatched dialogs remain unconfirmed.
+
+An end-to-end live deletion and actual service success receipts are still awaiting confirmation. No real chat was deleted by the agent while implementing this correction.
 
 For success, the adapter requires a new role=status/alert receipt exactly matching “Chat archived”, “Conversation archived”, “Chat deleted”, or “Conversation deleted” (optional punctuation), plus disappearance of the ID while the history remains visible. Those receipt strings are fixture assumptions awaiting live validation. Missing or differing receipts produce outcome unknown and stop the batch. Sidebar disappearance alone never counts as success.
 
@@ -56,3 +58,7 @@ A user confirmed that selection is visible, then reported deletion stopping at t
 Code review found that preflight checked for the presence of dialog elements without checking whether they were active. Alpha.3 ignores hidden/closed/inert dialog remnants and the known sidebar operating surface, while continuing to block separate visible overlays. Blocking messages include the overlay label when available. This addresses a reproducible false-positive case; confirmation on the user's installation is still pending.
 
 The native delete confirmation can temporarily hide the underlying sidebar for accessibility. The final identity check now checks the same connected ID/title/button without requiring that background row to be visible, while retaining strict confirmation-title matching. Regression tests cover both cases, plus genuinely open dialogs, alerts, and menus. All 32 automated tests pass locally. Actual live deletion and service receipts remain unverified.
+
+## Alpha.4 native confirmation regression
+
+The screenshot-reported plain-text layout and “Delete chat” label are represented in the fixture suite. Tests verify automatic confirmation once, rejection of another title, rejection of a disabled button, and preservation of an unselected duplicate-title chat. All 35 automated tests pass locally. Live success verification remains a release gate.

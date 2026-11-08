@@ -151,11 +151,16 @@ export class ChatGPTAdapter {
             const dialogs = this.activeOverlays().filter(x => x.getAttribute('role') !== 'menu');
             return dialogs.length === 1 ? dialogs[0] : null;
           });
-          // Native delete-dialog shape is deliberately strict until verified live.
+          // Support the live-tested plain-text confirmation as well as the
+          // earlier title-emphasis layout. Never match a title by substring.
           const heading = dialog?.querySelector('h1, h2, [role="heading"]')?.textContent.trim();
           const quote = dialog?.querySelector('strong, b')?.textContent.trim();
-          const confirm = dialog && [...dialog.querySelectorAll('button')].filter(x => x.textContent.trim() === 'Delete' && !x.disabled);
-          if (!dialog || !/^Delete (chat|conversation)\?$/i.test(heading || '') || quote !== item.title || confirm.length !== 1) {
+          const normalize = text => text.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ').trim();
+          const expected = normalize(`This will permanently delete ${item.title}. This can't be undone.`);
+          const descriptions = dialog ? [...dialog.querySelectorAll('p, div, span')].filter(el => !el.querySelector('button, h1, h2, [role="heading"]')).map(el => normalize(el.textContent)) : [];
+          const titleMatches = quote === item.title || descriptions.includes(expected);
+          const confirm = dialog && [...dialog.querySelectorAll('button')].filter(x => ['Delete', 'Delete chat'].includes(x.textContent.trim()) && !x.disabled && x.getAttribute('aria-disabled') !== 'true' && this.isVisible(x));
+          if (!dialog || !/^Delete (chat|conversation)\?$/i.test(heading || '') || !titleMatches || confirm.length !== 1) {
             throw new CleanupError('Native delete confirmation could not be verified. No confirmation was submitted. Close it manually.');
           }
           // Native modal dialogs may hide/inert the underlying sidebar for

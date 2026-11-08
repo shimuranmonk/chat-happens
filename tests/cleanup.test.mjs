@@ -213,3 +213,26 @@ test('native delete modal may hide the sidebar without losing target identity', 
   assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
   f.dom.window.close();
 });
+
+test('live-reported plain-text Delete chat dialog is confirmed automatically', async () => {
+  const f = setup({ nativeLayout: 'plain' });
+  const result = await new BatchRunner().run([f.selection[1]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.deepEqual(f.calls, [{ id: ids[1], action: 'delete' }]);
+  assert.equal(f.items[0].owner.isConnected, true);
+  f.dom.window.close();
+});
+
+test('plain-text dialog for another conversation is never confirmed', async () => {
+  const f = setup({ nativeLayout: 'plain', nativeMismatch: true });
+  const result = await new BatchRunner().run(f.selection, 'delete', f.adapter);
+  assert.equal(result[0].status, 'failed'); assert.equal(f.calls.length, 0);
+  f.dom.window.close();
+});
+
+test('disabled native Delete chat button is never submitted', async () => {
+  const f = setup({ nativeLayout: 'plain', disabledConfirm: true });
+  const result = await new BatchRunner().run(f.selection, 'delete', f.adapter);
+  assert.equal(result[0].status, 'failed'); assert.equal(f.calls.length, 0);
+  f.dom.window.close();
+});
