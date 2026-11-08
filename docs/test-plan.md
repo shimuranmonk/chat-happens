@@ -52,3 +52,7 @@ Use a dedicated test account or explicitly disposable conversations. Never use v
 ## Known coverage limits
 
 Fixtures model the observed row/menu contract, not the entire ChatGPT application. Automated checks cannot establish real service behavior, account/workspace isolation, rate-limit signals, Tampermonkey execution compatibility, or native confirmation wording. No real conversation was archived or deleted during development.
+
+## Alpha.3 regression coverage
+
+The suite now contains 32 tests. Added cases cover hidden/closed/inert dialog remnants, truly open dialog/alert/menu blockers, a sidebar exposed as a dialog, and a native deletion confirmation that temporarily hides the underlying sidebar. The selection-visibility tests also cover title/ID lists, row marking, and checkbox recovery after a page redraw. These simulated checks do not replace the manual release gate above.

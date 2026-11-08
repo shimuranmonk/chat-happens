@@ -156,3 +156,60 @@ test('stop between menu opening and action prevents mutation', async () => {
   await assert.rejects(f.adapter.perform(f.selection[0], 'archive', () => stopped), CleanupError);
   assert.equal(f.calls.length, 0); f.dom.window.close();
 });
+
+test('hidden and closed dialog remnants do not block selected deletion', async () => {
+  const f = setup();
+  const remnants = [
+    '<div role="dialog" hidden></div>',
+    '<div aria-hidden="true"><div role="alertdialog"></div></div>',
+    '<div role="dialog" data-state="closed"></div>',
+    '<div role="dialog" style="display:none"></div>',
+    '<div role="dialog" style="visibility:hidden"></div>',
+    '<div role="dialog" style="opacity:0"></div>',
+    '<div inert><div role="dialog"></div></div>',
+    '<dialog role="dialog"></dialog>',
+    '<div role="menu" data-state="closed"></div>',
+    '<div data-ch-owned><div role="dialog"></div></div>'
+  ];
+  const container = f.doc.createElement('div'); container.innerHTML = remnants.join(''); f.doc.body.append(container);
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
+  f.dom.window.close();
+});
+
+for (const role of ['dialog', 'alertdialog', 'menu']) {
+  test(`a genuinely open ${role} still blocks all cleanup actions`, async () => {
+    const f = setup();
+    const overlay = f.doc.createElement('div'); overlay.setAttribute('role', role); overlay.setAttribute('data-state', 'open'); f.doc.body.append(overlay);
+    const result = await new BatchRunner().run(f.selection, 'delete', f.adapter);
+    assert.equal(result[0].status, 'failed');
+    assert.match(result[0].detail, /blocking cleanup/);
+    assert.equal(result[1].status, 'stopped before processing');
+    assert.equal(f.calls.length, 0);
+    f.dom.window.close();
+  });
+}
+
+test('sidebar presented as a dialog remains an eligible operating surface', async () => {
+  const f = setup(); f.root.setAttribute('role', 'dialog');
+  const result = await new BatchRunner().run([f.selection[0]], 'archive', f.adapter);
+  assert.equal(result[0].status, 'succeeded'); assert.equal(f.calls.length, 1);
+  f.dom.window.close();
+});
+
+test('native delete modal may hide the sidebar without losing target identity', async () => {
+  const f = setup();
+  f.adapter.isVisible = el => f.visible(el) && !el.closest('[aria-hidden="true"]');
+  const originalWait = f.adapter.waitFor.bind(f.adapter);
+  f.adapter.waitFor = check => originalWait(() => {
+    const dialog = f.doc.querySelector('[role="dialog"]');
+    if (dialog) f.root.setAttribute('aria-hidden', 'true');
+    else f.root.removeAttribute('aria-hidden');
+    return check();
+  });
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
+  f.dom.window.close();
+});

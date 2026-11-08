@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat Happens (experimental)
 // @namespace    https://alapaap.net/
-// @version      0.1.0-alpha.2
+// @version      0.1.0-alpha.3
 // @description  Selectively archive or delete displayed ChatGPT conversations. Experimental; validate with disposable chats first.
 // @author       Alapaap.net
 // @homepageURL  https://github.com/shimuranmonk/chat-happens
@@ -142,13 +142,32 @@ class ChatGPTAdapter {
     button.click();
   }
 
+  activeOverlays() {
+    const view = this.doc.defaultView;
+    return [...this.doc.querySelectorAll('[role="menu"], [role="dialog"], [role="alertdialog"], dialog[open]')].filter(el => {
+      if (el.closest('[data-ch-owned], [hidden], [aria-hidden="true"], [inert]')) return false;
+      if (el.getAttribute('data-state') === 'closed') return false;
+      if (el.tagName === 'DIALOG' && !el.open) return false;
+      const style = view.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse' || style.opacity === '0') return false;
+      // ChatGPT's narrow-screen sidebar can itself be a dialog. Its chat rows
+      // are the operating surface, not a separate confirmation to dismiss.
+      if (el === this.history()) return false;
+      return this.isVisible(el);
+    });
+  }
+
   async perform(item, action, stopped) {
     if (!['archive', 'delete'].includes(action)) throw new CleanupError('Unsupported action.');
     const target = this.discover().find(x => x.id === item.id);
     if (!target) throw new CleanupError('Conversation is no longer displayed or its identity is ambiguous.', { status: 'skipped', halt: false });
     if (target.title !== item.title) throw new CleanupError('Conversation title changed. Review the selection again.');
-    if (this.doc.querySelector('[role="menu"][data-state="open"], [role="dialog"]:not([data-ch-owned]), [role="alertdialog"]')) {
-      throw new CleanupError('Close other menus or dialogs before running cleanup.');
+    const blocking = this.activeOverlays()[0];
+    if (blocking) {
+      const kind = blocking.getAttribute('role') === 'menu' ? 'menu' : 'dialog';
+      const labelledBy = blocking.getAttribute('aria-labelledby')?.split(/\s+/).map(id => this.doc.getElementById(id)?.textContent || '').join(' ').trim();
+      const label = (blocking.getAttribute('aria-label') || labelledBy || blocking.querySelector('h1, h2, [role="heading"]')?.textContent || '').trim().slice(0, 80);
+      throw new CleanupError(`An open ChatGPT ${kind}${label ? ` (${label})` : ''} is blocking cleanup. Close it and try again. No cleanup action was submitted.`);
     }
     if (!target.button.id || target.button.disabled || target.button.getAttribute('aria-disabled') === 'true') {
       throw new CleanupError('Conversation action control is unavailable.');
@@ -203,7 +222,7 @@ class ChatGPTAdapter {
         choices[0].click();
         if (action === 'delete') {
           const dialog = await this.waitFor(() => {
-            const dialogs = [...this.doc.querySelectorAll('[role="alertdialog"], [role="dialog"]:not([data-ch-owned])')].filter(x => this.isVisible(x));
+            const dialogs = this.activeOverlays().filter(x => x.getAttribute('role') !== 'menu');
             return dialogs.length === 1 ? dialogs[0] : null;
           });
           // Native delete-dialog shape is deliberately strict until verified live.
@@ -213,7 +232,9 @@ class ChatGPTAdapter {
           if (!dialog || !/^Delete (chat|conversation)\?$/i.test(heading || '') || quote !== item.title || confirm.length !== 1) {
             throw new CleanupError('Native delete confirmation could not be verified. No confirmation was submitted. Close it manually.');
           }
-          if (stopped() || !this.discover().some(x => x.id === item.id && x.button === target.button && x.title === item.title)) {
+          // Native modal dialogs may hide/inert the underlying sidebar for
+          // accessibility. Revalidate its identity without requiring visibility.
+          if (stopped() || !this.discover({ visibleOnly: false }).some(x => x.id === item.id && x.button === target.button && x.title === item.title)) {
             throw new CleanupError('Stopped before native delete confirmation. Close it manually.');
           }
           dispatched = true;

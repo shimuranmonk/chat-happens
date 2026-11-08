@@ -48,3 +48,11 @@ Automated fixture and UI tests, generated-script syntax check, and an actual-bro
 ## Release decision
 
 Keep this branch and its pull request in draft. Do not publish a production release until installation, disposable live archive/delete checks, browser compatibility, and failure-mode checks pass and are recorded here.
+
+## Live-test feedback and alpha.3 correction
+
+A user confirmed that selection is visible, then reported deletion stopping at the preflight message about another menu or dialog. That message is raised before the script opens a chat action menu or submits deletion.
+
+Code review found that preflight checked for the presence of dialog elements without checking whether they were active. Alpha.3 ignores hidden/closed/inert dialog remnants and the known sidebar operating surface, while continuing to block separate visible overlays. Blocking messages include the overlay label when available. This addresses a reproducible false-positive case; confirmation on the user's installation is still pending.
+
+The native delete confirmation can temporarily hide the underlying sidebar for accessibility. The final identity check now checks the same connected ID/title/button without requiring that background row to be visible, while retaining strict confirmation-title matching. Regression tests cover both cases, plus genuinely open dialogs, alerts, and menus. All 32 automated tests pass locally. Actual live deletion and service receipts remain unverified.

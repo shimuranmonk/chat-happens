@@ -27,7 +27,7 @@ export function fixture({ outcome = 'success', mismatch = false, nativeMismatch 
     row.append(link, button); owner.append(row); root.append(owner);
     const complete = action => {
       calls.push({ id, action });
-      doc.querySelector('[role="dialog"]')?.remove();
+      [...doc.querySelectorAll('[role="dialog"]')].find(el => el !== root)?.remove();
       if (outcome === 'throw') throw new Error('Disconnected');
       if (outcome !== 'failure') owner.remove();
       if (outcome !== 'silent') {
