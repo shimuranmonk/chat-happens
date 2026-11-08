@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chat Happens — simulated chat list</title>
+<style>body{margin:0;background:#eef2ee;color:#16382d;font:16px/1.5 system-ui}main{max-width:800px;padding:40px;margin:auto}aside{width:min(480px,100%);background:white;border:1px solid #bacdc1;border-radius:16px;padding:16px;box-sizing:border-box}[data-sidebar-cycle-item]{position:relative;display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:8px;margin:4px 0;background:#f1f5f1}a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer;padding:6px 12px}[role=menu],[role=dialog]{position:fixed;left:40px;top:160px;z-index:1000;padding:20px;border:1px solid #738c7f;border-radius:12px;background:white;box-shadow:0 10px 30px #0003}[role=menuitem]{padding:10px;cursor:pointer}[role=status]{margin:20px}small{display:block}</style>
+<main><p>ALAPAAP.NET / DEVELOPMENT PREVIEW</p><h1>A calmer conversation list.</h1><p>This local demo contains simulated conversations only. No ChatGPT account is connected. Archive and Delete affect this page's sample rows.</p><p>Use the Chat Happens panel to enter cleanup mode and select chats. Reload to reset the samples.</p><aside id="browser-sidebar-popover" aria-label="Simulated chat history"></aside></main>
+<script type="module">
+import { mountChatHappens } from '/src/ui.js';
+const root = document.querySelector('aside');
+const names = ['A recipe worth keeping', 'Quick question', 'Quick question', 'Weekend notes'];
+names.forEach((title, i) => {
+  const id = `00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`;
+  const owner = document.createElement('div'); owner.dataset.sidebarChatgptConversationKey = `chatgpt:conversation:${id}`;
+  const row = document.createElement('div'); row.dataset.sidebarCycleItem = ''; row.setAttribute('role','group');
+  const a = document.createElement('a'); a.dataset.interactiveRowLink = 'true'; a.href = `/c/${id}`; a.setAttribute('aria-label',title); a.textContent = title; a.onclick = e => e.preventDefault();
+  const button = document.createElement('button'); button.id = `trigger-${i}`; button.textContent = '…'; button.setAttribute('aria-label','Chat actions'); button.setAttribute('aria-haspopup','menu');
+  row.append(a,button); owner.append(row); root.append(owner);
+  const complete = action => { owner.remove(); document.querySelector('[role=dialog]')?.remove(); const toast=document.createElement('div');toast.setAttribute('role','status');toast.textContent=`Chat ${action === 'archive' ? 'archived' : 'deleted'}`;document.body.append(toast);setTimeout(()=>toast.remove(),3000); };
+  button.onclick = () => {
+    const old=document.getElementById(`menu-${i}`);if(old){old.remove();button.setAttribute('aria-expanded','false');return;}
+    const menu=document.createElement('div');menu.id=`menu-${i}`;menu.setAttribute('role','menu');menu.setAttribute('data-state','open');menu.setAttribute('aria-labelledby',button.id);button.setAttribute('aria-controls',menu.id);button.setAttribute('aria-expanded','true');
+    for(const action of ['archive','delete']){const choice=document.createElement('div');choice.setAttribute('role','menuitem');choice.textContent=action==='archive'?'Archive':'Delete';choice.onclick=()=>{menu.remove();button.setAttribute('aria-expanded','false');if(action==='archive')return complete(action);const dialog=document.createElement('div');dialog.setAttribute('role','dialog');const h=document.createElement('h2');h.textContent='Delete chat?';const p=document.createElement('p');p.textContent='This will delete ';const strong=document.createElement('strong');strong.textContent=title;p.append(strong);const confirm=document.createElement('button');confirm.textContent='Delete';confirm.onclick=()=>complete(action);dialog.append(h,p,confirm);document.body.append(dialog);};menu.append(choice);}document.body.append(menu);
+  };
+});
+mountChatHappens(document);
+</script></html>

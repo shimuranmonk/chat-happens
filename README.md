@@ -16,9 +16,34 @@ Early planning stage. No userscript implementation has been added yet. Kapoy isi
 
 ## Planning documents
 
-Current stage: requirements and solution planning.
+Current stage: experimental implementation and testing. Production release is pending the manual validation gate.
 
 - [Product definition — business challenge, intent, intent summary, PRD, and solution specification](docs/product-definition.md) — Draft for review.
+
+## Experimental userscript
+
+The first implementation is available in [chat-happens.user.js](chat-happens.user.js). It adds manual selection, review, archive/delete confirmations, progress, stop, and per-conversation results. It is an experimental alpha, not a production release. Your original planning note above is retained as project history.
+
+Only the inspected English ChatGPT web sidebar is targeted. Project chats and unfamiliar layouts are excluded. Native delete confirmation and live success receipts still require validation with disposable conversations. No real conversations were changed during development.
+
+### Development and testing
+
+Requires Node.js 20+ and npm:
+
+```sh
+npm ci --ignore-scripts
+npm run check
+npm run preview
+```
+
+The preview opens a simulated chat list at http://127.0.0.1:4173. It never connects to your ChatGPT account. Reload resets its samples. Stop the preview server with Ctrl+C.
+
+To evaluate the alpha on a dedicated test account, create a new script in Tampermonkey, replace its editor contents with the complete built userscript, save, then reload ChatGPT and open the sidebar. First check selection and cancellation. Use only disposable conversations for action tests. Do not paste scripts into a browser console.
+
+Select displayed covers only eligible rows currently visible in the sidebar. Review every ID before confirming. An unknown result stops processing: inspect ChatGPT manually before taking further action. The script provides no undo for deletion.
+
+- [Test plan and production release gate](docs/test-plan.md)
+- [Integration findings, assumptions, and limitations](docs/integration-validation.md)
 
 ## Credits
 
