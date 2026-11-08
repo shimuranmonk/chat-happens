@@ -26,7 +26,98 @@ The first implementation is available in [chat-happens.user.js](chat-happens.use
 
 Only the inspected English ChatGPT web sidebar is targeted. Project chats and unfamiliar layouts are excluded. Native delete confirmation and live success receipts still require validation with disposable conversations. No real conversations were changed during development.
 
-### Development and testing
+## How to install and use Chat Happens
+
+You do not need to know how to code. Chat Happens adds a small cleanup panel to the ChatGPT website.
+
+**This is an early test version. Start with a separate test account or chats you created only for testing. Live testing is still pending.**
+
+### What you need
+
+- A desktop browser with [Tampermonkey](https://www.tampermonkey.net/) installed. Tampermonkey is a browser extension that lets small add-ons like Chat Happens run on a website.
+- ChatGPT open at [chatgpt.com](https://chatgpt.com/), with its interface set to English.
+
+This version runs in your browser. It does not add buttons to the ChatGPT desktop or phone app. Browser compatibility is still being tested.
+
+### 1. Install Tampermonkey
+
+1. Visit the [official Tampermonkey website](https://www.tampermonkey.net/).
+2. Choose your browser and follow its installation instructions.
+3. Find the Tampermonkey icon near your browser's address bar. It may be inside the puzzle-piece **Extensions** menu.
+
+If Tampermonkey says it needs permission to run userscripts, follow its [official instructions](https://www.tampermonkey.net/faq.php#Q209). You do not need a command window or any of the developer tools listed later in this README.
+
+### 2. Add Chat Happens
+
+1. Open [the Chat Happens script](chat-happens.user.js) in this repository.
+2. Click **Raw** to display the complete script by itself.
+3. If Tampermonkey opens an installation screen, check that the name is **Chat Happens (experimental)** and the author is **Alapaap.net**, then choose **Install**.
+4. If you see a page of text instead, select and copy all of it. Click the Tampermonkey icon, choose **Create a new script**, select all the sample text in its editor, and replace it with what you copied. Choose **File → Save**.
+5. Check that **Chat Happens (experimental)** is switched on in Tampermonkey.
+
+You are copying a ready-made add-on; you do not need to edit its contents. Do not paste it into a browser console.
+
+### 3. Open cleanup mode
+
+1. Open ChatGPT in the same browser and sign in to your test account.
+2. Refresh the ChatGPT page if it was already open.
+3. Open the sidebar that lists your conversations.
+4. Look for the **Chat Happens** panel near the bottom-right corner.
+5. Click **Enter cleanup mode**. Small checkboxes should appear beside supported chats.
+
+If checkboxes do not appear, leave your chats unchanged and check the troubleshooting tips below.
+
+### 4. Choose and review your chats
+
+1. Tick the box beside each chat you want to act on.
+2. Check the selected count in the panel.
+3. Click **Review selection** to see the full list.
+
+**Select displayed** selects only supported chats currently visible in the sidebar. It does not select your whole account or load older chats. Chats that appear later are not automatically selected. Project chats are excluded in this version.
+
+To change your mind, untick a chat or choose **Clear selection**. **Exit cleanup mode** clears your selection and removes the checkboxes without archiving or deleting anything.
+
+The review shows each chat's title and a long identifying number. This helps distinguish chats with the same title. If you cannot tell which is which, choose **Cancel** and check the chats before continuing.
+
+### 5. Archive or delete
+
+From the review screen, choose one action:
+
+- **Archive selected** removes the chats from your regular sidebar while keeping them in your ChatGPT account.
+- **Delete selected** permanently deletes the chats. They cannot be restored through ChatGPT, and Chat Happens has no undo. See [OpenAI's explanation](https://help.openai.com/en/articles/8809935-deleting-and-archiving-chats-in-chatgpt).
+
+Read the next screen and check the action and number of chats. For deletion, you must also tick the box acknowledging that deletion is permanent. Click the confirmation button only when the list is correct. **Cancel** closes the review without starting cleanup.
+
+### 6. Watch the progress
+
+Keep the page open and avoid using ChatGPT while cleanup is running. The panel shows progress and a **Stop processing** button.
+
+**Stop processing** prevents further chats from being processed. An action already submitted may still finish. Switching away from the tab or interacting with ChatGPT outside the panel also requests a stop.
+
+Open **Batch results** to see what happened to each chat:
+
+| Result | What it means |
+|---|---|
+| Succeeded | Chat Happens saw the expected confirmation from ChatGPT and the chat left the displayed list. |
+| Skipped | The chat could no longer be found reliably. No action was started for that chat. |
+| Failed | A check failed before the action was submitted. Read the accompanying explanation. |
+| Stopped before processing | Cleanup stopped before this chat was processed. |
+| Outcome unknown | An action may have happened, but Chat Happens could not confirm the result. |
+
+**If you see “Outcome unknown,” check the chat in ChatGPT before doing anything else. Do not simply run the same action again.** The remaining batch stops, and that chat cannot be selected again until the page is reloaded. Reloading does not resolve the uncertainty.
+
+Refreshing or closing the page clears the selection and results. Cleanup does not continue in the background. If an unfamiliar ChatGPT confirmation stays open after a failure, close it manually without approving it.
+
+### If something is not working
+
+- **No cleanup panel:** Check that Tampermonkey and Chat Happens are enabled, then refresh the ChatGPT website.
+- **No checkboxes:** Open the conversation sidebar and check that ChatGPT is in English. Project chats and unsupported layouts are excluded.
+- **Cleanup stops unexpectedly:** Read the result beside the affected chat. This early version stops when it cannot confidently identify a control or confirm an outcome.
+- **Still stuck:** [Report an issue](https://github.com/shimuranmonk/chat-happens/issues). Include your browser, Tampermonkey version, and the message shown. Leave out private chat contents.
+
+## For developers: build and test
+
+These steps are optional. You do not need them to install the ready-made script.
 
 Requires Node.js 20+ and npm:
 
@@ -36,11 +127,7 @@ npm run check
 npm run preview
 ```
 
-The preview opens a simulated chat list at http://127.0.0.1:4173. It never connects to your ChatGPT account. Reload resets its samples. Stop the preview server with Ctrl+C.
-
-To evaluate the alpha on a dedicated test account, create a new script in Tampermonkey, replace its editor contents with the complete built userscript, save, then reload ChatGPT and open the sidebar. First check selection and cancellation. Use only disposable conversations for action tests. Do not paste scripts into a browser console.
-
-Select displayed covers only eligible rows currently visible in the sidebar. Review every ID before confirming. An unknown result stops processing: inspect ChatGPT manually before taking further action. The script provides no undo for deletion.
+The preview shows a simulated chat list at http://127.0.0.1:4173. It never connects to your ChatGPT account. Reload resets its samples. Stop the preview server with Ctrl+C.
 
 - [Test plan and production release gate](docs/test-plan.md)
 - [Integration findings, assumptions, and limitations](docs/integration-validation.md)
