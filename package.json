@@ -1,0 +1,14 @@
+{
+  "name": "chat-happens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Selective ChatGPT conversation cleanup userscript by Alapaap.net",
+  "scripts": {
+    "preview": "node scripts/preview.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/cleanup.test.mjs tests/ui.test.mjs",
+    "check": "npm run build && node --check chat-happens.user.js && npm test"
+  },
+  "devDependencies": { "jsdom": "26.1.0" }
+}
