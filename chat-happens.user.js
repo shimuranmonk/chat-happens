@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat Happens (experimental)
 // @namespace    https://alapaap.net/
-// @version      0.1.0-alpha.1
+// @version      0.1.0-alpha.2
 // @description  Selectively archive or delete displayed ChatGPT conversations. Experimental; validate with disposable chats first.
 // @author       Alapaap.net
 // @homepageURL  https://github.com/shimuranmonk/chat-happens
@@ -246,21 +246,30 @@ function mountChatHappens(doc) {
   const host = doc.createElement('div');
   host.id = 'chat-happens';
   host.dataset.chOwned = '';
+  const rowStyles = doc.createElement('style');
+  rowStyles.dataset.chOwned = '';
+  rowStyles.textContent = `
+    [data-ch-row] > input[data-ch-owned]{appearance:auto!important;-webkit-appearance:checkbox!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;position:absolute!important;inset-inline-start:7px!important;top:50%!important;transform:translateY(-50%)!important;z-index:50!important;width:18px!important;height:18px!important;margin:0!important;accent-color:#16704a!important;color-scheme:light!important}
+    [data-ch-row][data-ch-selected="true"]{background:#cfeadb!important;box-shadow:inset 4px 0 0 #16704a!important;outline:2px solid #16704a!important;outline-offset:-2px!important}
+    [data-ch-row][data-ch-selected="true"] a{color:#102c20!important}
+  `;
+  doc.head.append(rowStyles);
   const shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>
     :host{position:fixed;bottom:18px;right:18px;z-index:2147483000;font:14px/1.5 system-ui,sans-serif;color:#edf4f2;color-scheme:dark}
-    *{box-sizing:border-box}section{width:min(350px,calc(100vw - 36px));padding:16px;background:#172623;border:1px solid #58766b;border-radius:16px;box-shadow:0 10px 35px #0005}
+    *{box-sizing:border-box}section{width:min(350px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:16px;background:#172623;border:1px solid #58766b;border-radius:16px;box-shadow:0 10px 35px #0005}
     h2{font-size:18px;margin:0 0 4px}p{margin:8px 0}.sub{font-size:12px;color:#bdcec6}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
     button{font:inherit;border:1px solid #7c9a8e;border-radius:8px;padding:7px 10px;color:inherit;background:#263e36;cursor:pointer}
     button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visible{outline:3px solid #f3ce66;outline-offset:3px}.danger{background:#8b2828;border-color:#f4a4a4}
     [hidden]{display:none!important}dialog{color:inherit;background:#172623;border:1px solid #7c9a8e;border-radius:16px;padding:22px;width:min(560px,calc(100vw - 32px));max-height:85vh;overflow:auto}
     dialog::backdrop{background:#0009}ol{max-height:32vh;overflow:auto;padding-left:24px}li{overflow-wrap:anywhere;margin:8px 0}small{display:block;color:#bdcec6}
     details{margin-top:10px}#results{max-height:200px;overflow:auto}label{display:block;margin:14px 0}
+    #selected-list{list-style:none;max-height:160px;overflow:auto;margin:8px 0 0;padding:0}#selected-list li{padding:7px 9px;margin:5px 0;border-left:3px solid #81d5ac;border-radius:4px;background:#263e36;overflow-wrap:anywhere}#selected-list small{font-size:11px}
   </style>
   <section aria-label="Chat Happens cleanup">
     <h2>Chat Happens</h2><div class="sub">Alapaap.net · Experimental preview</div>
     <p id="message" role="status" aria-live="polite">Open the ChatGPT sidebar, then enter cleanup mode.</p>
-    <div id="selection" hidden><strong id="count">0 selected</strong><div class="actions"><button id="all">Select displayed</button><button id="clear">Clear selection</button><button id="review">Review selection</button></div></div>
+    <div id="selection" hidden><strong id="count">0 selected</strong><ul id="selected-list" aria-label="Selected conversations" hidden></ul><div class="actions"><button id="all">Select displayed</button><button id="clear">Clear selection</button><button id="review">Review selection</button></div></div>
     <div class="actions"><button id="toggle">Enter cleanup mode</button><button id="stop" hidden>Stop processing</button></div>
     <details id="result-wrap" hidden><summary>Batch results</summary><ol id="results"></ol></details>
   </section>
@@ -276,11 +285,25 @@ function mountChatHappens(doc) {
   let reviewing = [];
   let pendingAction = null;
   let timer;
+  let selectionSignature = '';
   const dialog = shadow.querySelector('dialog');
   const say = text => { $('message').textContent = text; };
   const update = () => {
     $('selection').hidden = !active;
     $('count').textContent = `${selected.size} selected`;
+    $('selected-list').hidden = selected.size === 0;
+    const signature = JSON.stringify([...selected.values()]);
+    if (signature !== selectionSignature) {
+      selectionSignature = signature;
+      $('selected-list').replaceChildren(...[...selected.values()].map(item => {
+        const li = doc.createElement('li');
+        li.textContent = item.title;
+        const id = doc.createElement('small');
+        id.textContent = item.id;
+        li.append(id);
+        return li;
+      }));
+    }
     $('review').disabled = !selected.size || runner.running;
     $('all').disabled = runner.running;
     $('clear').disabled = runner.running;
@@ -290,17 +313,23 @@ function mountChatHappens(doc) {
     for (const [row, record] of controls) {
       record.input.checked = selected.has(record.id);
       record.input.disabled = runner.running || uncertain.has(record.id);
+      const marked = selected.has(record.id) ? 'true' : 'false';
+      if (row.getAttribute('data-ch-row') !== '') row.setAttribute('data-ch-row', '');
+      if (row.getAttribute('data-ch-selected') !== marked) row.setAttribute('data-ch-selected', marked);
+      if (row.style.paddingInlineStart !== '32px') row.style.paddingInlineStart = '32px';
     }
   };
   const removeControl = (row, record) => {
     record.input.remove();
     row.style.paddingInlineStart = record.padding;
+    row.removeAttribute('data-ch-row');
+    row.removeAttribute('data-ch-selected');
     controls.delete(row);
   };
   const scan = () => {
     const displayed = active ? adapter.discover() : [];
     const rows = new Set(displayed.map(x => x.row));
-    for (const [row, record] of controls) if (!rows.has(row) || displayed.find(x => x.row === row)?.id !== record.id) removeControl(row, record);
+    for (const [row, record] of controls) if (!rows.has(row) || displayed.find(x => x.row === row)?.id !== record.id || record.input.parentElement !== row) removeControl(row, record);
     for (const item of displayed) {
       if (controls.has(item.row)) continue;
       const input = doc.createElement('input');
@@ -326,10 +355,10 @@ function mountChatHappens(doc) {
   };
   const observer = new doc.defaultView.MutationObserver(records => {
     if (!records.some(r => !host.contains(r.target))) return;
-    clearTimeout(timer);
-    timer = setTimeout(scan, 150);
+    if (timer) return;
+    timer = setTimeout(() => { timer = null; scan(); }, 150);
   });
-  observer.observe(doc.body, { childList: true, subtree: true });
+  observer.observe(doc.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-ch-row', 'data-ch-selected', 'style'] });
   $('toggle').onclick = () => {
     active = !active;
     if (!active) selected.clear();
@@ -427,7 +456,7 @@ function mountChatHappens(doc) {
   };
   $('stop').onclick = () => { runner.stop(); say('Stopping. An action already submitted may finish.'); };
   update();
-  return { host, adapter, runner, destroy() { observer.disconnect(); clearTimeout(timer); for (const [row, record] of controls) removeControl(row, record); host.remove(); } };
+  return { host, adapter, runner, destroy() { observer.disconnect(); clearTimeout(timer); for (const [row, record] of controls) removeControl(row, record); rowStyles.remove(); host.remove(); } };
 }
 
 mountChatHappens(document);

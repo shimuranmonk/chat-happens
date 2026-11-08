@@ -57,6 +57,10 @@ If Tampermonkey says it needs permission to run userscripts, follow its [officia
 
 You are copying a ready-made add-on; you do not need to edit its contents. Do not paste it into a browser console.
 
+### Updating an existing installation
+
+Open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and copy the complete text. Open Tampermonkey's **Dashboard**, click your existing **Chat Happens (experimental)** entry, replace all its editor contents with the copied text, and choose **File → Save**. Refresh ChatGPT afterward. This updates the existing entry; you do not need a second copy.
+
 ### 3. Open cleanup mode
 
 1. Open ChatGPT in the same browser and sign in to your test account.
@@ -70,7 +74,7 @@ If checkboxes do not appear, leave your chats unchanged and check the troublesho
 ### 4. Choose and review your chats
 
 1. Tick the box beside each chat you want to act on.
-2. Check the selected count in the panel.
+2. Check the selected count and chat titles in the panel. Each selected row is also shaded green and has a ticked checkbox. The title list stays visible even if you scroll away from a selected chat.
 3. Click **Review selection** to see the full list.
 
 **Select displayed** selects only supported chats currently visible in the sidebar. It does not select your whole account or load older chats. Chats that appear later are not automatically selected. Project chats are excluded in this version.

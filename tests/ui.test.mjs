@@ -43,3 +43,45 @@ test('mount is idempotent and cleanup restores row padding', () => {
   assert.equal(mountChatHappens(f.doc), undefined);
   f.$('toggle').click(); assert.equal(f.items[0].row.style.paddingInlineStart, '9px'); f.close();
 });
+
+test('selected titles and IDs appear immediately and rows remain marked', () => {
+  const f = setup(); f.$('toggle').click();
+  f.items[0].row.querySelector('input').click();
+  assert.equal(f.$('count').textContent, '1 selected');
+  assert.equal(f.$('selected-list').hidden, false);
+  assert.match(f.$('selected-list').textContent, /Same title/);
+  assert.match(f.$('selected-list').textContent, new RegExp(ids[0]));
+  assert.equal(f.items[0].row.dataset.chSelected, 'true');
+  assert.equal(f.items[1].row.dataset.chSelected, 'false');
+  f.$('clear').click();
+  assert.equal(f.$('selected-list').hidden, true);
+  assert.equal(f.items[0].row.dataset.chSelected, 'false');
+  f.$('toggle').click();
+  assert.equal(f.items[0].row.hasAttribute('data-ch-selected'), false);
+  f.close();
+});
+
+test('checkbox and highlight recover after the page redraws a selected row', async () => {
+  const f = setup(); f.$('toggle').click();
+  f.items[0].row.querySelector('input').click();
+  f.items[0].row.querySelector('input').remove();
+  f.items[0].row.removeAttribute('data-ch-row');
+  f.items[0].row.removeAttribute('data-ch-selected');
+  f.items[0].row.style.paddingInlineStart = '';
+  await new Promise(resolve => setTimeout(resolve, 400));
+  const input = f.items[0].row.querySelector('input');
+  assert.ok(input); assert.equal(input.checked, true);
+  assert.equal(f.items[0].row.dataset.chSelected, 'true');
+  assert.equal(f.$('count').textContent, '1 selected');
+  assert.match(f.$('selected-list').textContent, new RegExp(ids[0]));
+  assert.equal(f.calls.length, 0);
+  f.close();
+});
+
+test('selection list renders untrusted titles as text', () => {
+  const f = setup(); f.items[0].link.setAttribute('aria-label', '<img src=x onerror=alert(1)>');
+  f.$('toggle').click(); f.items[0].row.querySelector('input').click();
+  assert.equal(f.$('selected-list').querySelector('img'), null);
+  assert.match(f.$('selected-list').textContent, /<img/);
+  f.close();
+});

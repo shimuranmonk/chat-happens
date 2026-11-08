@@ -3,7 +3,7 @@ const parts = await Promise.all(['core', 'adapter', 'ui'].map(name => readFile(n
 const header = `// ==UserScript==
 // @name         Chat Happens (experimental)
 // @namespace    https://alapaap.net/
-// @version      0.1.0-alpha.1
+// @version      0.1.0-alpha.2
 // @description  Selectively archive or delete displayed ChatGPT conversations. Experimental; validate with disposable chats first.
 // @author       Alapaap.net
 // @homepageURL  https://github.com/shimuranmonk/chat-happens
