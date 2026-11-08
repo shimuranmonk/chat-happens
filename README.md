@@ -66,7 +66,7 @@ Open the latest [Chat Happens script](chat-happens.user.js), click **Raw**, and 
 1. Open ChatGPT in the same browser and sign in to your test account.
 2. Refresh the ChatGPT page if it was already open.
 3. Open the sidebar that lists your conversations.
-4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.5**.
+4. Look for the **Chat Happens** panel near the bottom-right corner. The installed version is shown beneath its name, for example **v0.1.0-alpha.6**.
 5. Click **Enter cleanup mode**. Small checkboxes should appear beside supported chats.
 
 If checkboxes do not appear, leave your chats unchanged and check the troubleshooting tips below.
@@ -96,7 +96,7 @@ After your final confirmation in Chat Happens, the script handles ChatGPT's own 
 
 ### 6. Watch the progress
 
-Keep the page open and avoid using ChatGPT while cleanup is running. The panel shows progress and a **Stop processing** button.
+Keep the page open and avoid using ChatGPT while cleanup is running. The panel shows progress and a **Stop processing** button. During a batch, Chat Happens may scroll the sidebar to bring an already-selected chat back into view. It does not add any chats to your selection.
 
 **Stop processing** prevents further chats from being processed. An action already submitted may still finish. Switching away from the tab or interacting with ChatGPT outside the panel also requests a stop.
 
@@ -105,7 +105,7 @@ Open **Batch results** to see what happened to each chat:
 | Result | What it means |
 |---|---|
 | Succeeded | Chat Happens saw a success notice, or verified that the delete confirmation closed and that specific chat stayed removed while neighboring chats remained. This verifies the page result, not deletion from OpenAI's servers. |
-| Skipped | The chat could no longer be found reliably. No action was started for that chat. |
+| Skipped | The selected chat could not be found reliably or brought into view. No action was started for that chat. Check it manually; you can review and retry skipped chats separately. |
 | Failed | A check failed before the action was submitted. Read the accompanying explanation. |
 | Stopped before processing | Cleanup stopped before this chat was processed. |
 | Outcome unknown | An action may have happened, but Chat Happens could not confirm the result. |

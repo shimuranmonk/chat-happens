@@ -64,3 +64,7 @@ The suite now contains 35 tests, including the live-reported plain-text title me
 ## Alpha.5 completion evidence and version
 
 The suite now contains 44 tests. New tests verify stable toast-free deletion, unknown results when the sidebar hides or is replaced, loss of neighbors, an open confirmation, unexpected navigation, a reappearing target, and lack of any neighboring evidence. A version consistency test compares the displayed version, userscript header, and package metadata. Live validation of the updated reporting remains pending.
+
+## Alpha.6 batch visibility regression
+
+The suite now contains 49 tests. Added scenarios ensure a selected offscreen row is brought into view after an earlier deletion, a redrawn row is reacquired by exact ID, a disappearing target never causes substitution, Stop prevents submission during scrolling, and a transiently unloaded row can settle before processing. Live retest: review only the skipped chats from the earlier batch and confirm they remain intended targets before retrying; do not repeat successful deletions.

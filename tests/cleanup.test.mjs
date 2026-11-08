@@ -252,7 +252,7 @@ const uncertainChanges = {
   'history root replaced': ({ root }) => { root.replaceWith(root.cloneNode(true)); },
   'confirmation stays open': ({ doc, dialog }) => { doc.body.append(dialog); },
   'unexpected navigation': ({ doc }) => { doc.defaultView.history.pushState({}, '', '/settings'); },
-  'target reappears': ({ root, owner }) => { setTimeout(() => root.prepend(owner), 4); }
+  'target reappears': ({ root, owner }) => { queueMicrotask(() => root.prepend(owner)); }
 };
 for (const [name, afterSubmit] of Object.entries(uncertainChanges)) {
   test(`toast-free delete stays unknown when ${name}`, async () => {
@@ -270,5 +270,59 @@ test('no-toast deletion with no neighboring evidence remains unknown', async () 
   f.items[1].owner.remove(); f.items[2].owner.remove();
   const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
   assert.equal(result[0].status, 'outcome unknown'); assert.equal(f.calls.length, 1);
+  f.dom.window.close();
+});
+
+test('batch brings an offscreen selected row into view after earlier deletions', async () => {
+  let f;
+  f = setup({ nativeLayout: 'plain', afterSubmit: () => { if (f.calls.length === 1) f.items[1].row.dataset.offscreen = 'true'; } });
+  f.adapter.isVisible = el => f.visible(el) && el.dataset.offscreen !== 'true';
+  let scrolled = 0;
+  f.items[1].row.scrollIntoView = () => { scrolled++; delete f.items[1].row.dataset.offscreen; };
+  const result = await new BatchRunner().run(f.selection.slice(0, 2), 'delete', f.adapter);
+  assert.deepEqual(result.map(x => x.status), ['succeeded', 'succeeded']);
+  assert.equal(scrolled, 1);
+  assert.deepEqual(f.calls.map(x => x.id), ids.slice(0, 2));
+  assert.equal(f.items[2].owner.isConnected, true);
+  f.dom.window.close();
+});
+
+test('offscreen target is reacquired by ID when scrolling redraws its row', async () => {
+  const f = setup({ nativeLayout: 'plain' });
+  f.items[1].row.dataset.offscreen = 'true';
+  f.adapter.isVisible = el => f.visible(el) && el.dataset.offscreen !== 'true';
+  f.items[1].row.scrollIntoView = () => { f.items[1].owner.remove(); f.add(ids[1]); };
+  const result = await new BatchRunner().run([f.selection[1]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.deepEqual(f.calls, [{ id: ids[1], action: 'delete' }]);
+  f.dom.window.close();
+});
+
+test('scrolling never substitutes another chat if the selected row disappears', async () => {
+  const f = setup();
+  f.items[0].row.dataset.offscreen = 'true';
+  f.adapter.isVisible = el => f.visible(el) && el.dataset.offscreen !== 'true';
+  f.items[0].row.scrollIntoView = () => f.items[0].owner.remove();
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'skipped'); assert.equal(f.calls.length, 0);
+  f.dom.window.close();
+});
+
+test('stop during automatic scrolling prevents any action', async () => {
+  const f = setup(); let stopped = false;
+  f.items[0].row.dataset.offscreen = 'true';
+  f.adapter.isVisible = el => f.visible(el) && el.dataset.offscreen !== 'true';
+  f.items[0].row.scrollIntoView = () => { stopped = true; delete f.items[0].row.dataset.offscreen; };
+  await assert.rejects(f.adapter.perform(f.selection[0], 'delete', () => stopped), error => error.status === 'stopped before processing');
+  assert.equal(f.calls.length, 0); f.dom.window.close();
+});
+
+test('transiently unloaded selected row can settle before processing', async () => {
+  const f = setup({ nativeLayout: 'plain' });
+  f.items[0].owner.remove();
+  setTimeout(() => f.root.prepend(f.items[0].owner), 5);
+  const result = await new BatchRunner().run([f.selection[0]], 'delete', f.adapter);
+  assert.equal(result[0].status, 'succeeded');
+  assert.deepEqual(f.calls, [{ id: ids[0], action: 'delete' }]);
   f.dom.window.close();
 });

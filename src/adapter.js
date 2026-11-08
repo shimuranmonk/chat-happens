@@ -84,11 +84,41 @@ export class ChatGPTAdapter {
     });
   }
 
+  async prepareTarget(item, stopped) {
+    const checkStopped = () => {
+      if (stopped()) throw new CleanupError('Stopped before action.', { status: 'stopped before processing' });
+    };
+    const find = () => {
+      checkStopped();
+      const target = this.discover({ visibleOnly: false }).find(x => x.id === item.id);
+      if (target && target.title !== item.title) throw new CleanupError('Conversation title changed. Review the selection again.');
+      return target;
+    };
+    // A previous deletion can move a still-loaded selected row outside the
+    // viewport. Selection is tied to its ID, not to continued visibility.
+    let target = await this.waitFor(find);
+    if (!target) throw new CleanupError('Selected conversation is not currently loaded, or its identity is ambiguous. No action was submitted.', { status: 'skipped', halt: false });
+    if (!this.isVisible(target.row)) {
+      if (!this.isVisible(this.history()) || typeof target.row.scrollIntoView !== 'function') {
+        throw new CleanupError('Selected conversation could not be brought into view. No action was submitted.', { status: 'skipped', halt: false });
+      }
+      checkStopped();
+      target.row.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+      // Scrolling can redraw the row. Reacquire the same ID and verify the
+      // title before opening its menu; never substitute a neighboring row.
+      target = await this.waitFor(() => {
+        const current = find();
+        return current && this.isVisible(current.row) ? current : null;
+      });
+      if (!target) throw new CleanupError('Selected conversation did not become visible after scrolling. No action was submitted.', { status: 'skipped', halt: false });
+    }
+    checkStopped();
+    return target;
+  }
+
   async perform(item, action, stopped) {
     if (!['archive', 'delete'].includes(action)) throw new CleanupError('Unsupported action.');
-    const target = this.discover().find(x => x.id === item.id);
-    if (!target) throw new CleanupError('Conversation is no longer displayed or its identity is ambiguous.', { status: 'skipped', halt: false });
-    if (target.title !== item.title) throw new CleanupError('Conversation title changed. Review the selection again.');
+    const target = await this.prepareTarget(item, stopped);
     const initialHistory = this.history();
     const initialUrl = this.doc.location.href;
     const initialPath = this.doc.location.pathname;

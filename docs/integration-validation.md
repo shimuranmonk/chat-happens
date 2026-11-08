@@ -72,3 +72,11 @@ The screenshot-reported plain-text layout and “Delete chat” label are repres
 A user reported that a single conversation was successfully deleted, but the script reported outcome unknown because its expected success notice was not detected. The alpha.5 fallback above covers that UI completion pattern while retaining unknown results for an unstable list, missing neighbors, hidden/replaced history, an open confirmation, reappearing target, or unexpected navigation. Agent-run tests use simulated conversations; validation of the revised path on the user's installation remains pending.
 
 The panel now shows the installed version. The UI and userscript header share src/version.js, and a regression test checks that they match package metadata. All 44 local automated tests pass.
+
+## Alpha.6 selected rows outside the viewport
+
+A user reported a six-chat deletion batch with four successes and two skips. The skipped result is raised before any cleanup action for that item. Code review identified that the pre-action lookup used visible-only discovery, so list reflow could make an otherwise valid selected chat ineligible.
+
+Alpha.6 first looks up the selected ID among all currently loaded eligible ordinary-chat rows and briefly waits for transient rendering gaps. If its row is offscreen while the sidebar is visible, it scrolls that row into view, reacquires the exact ID and title, then performs the existing ownership and confirmation checks. Stop remains effective during this preparation. It never substitutes another row or adds to the selection. A genuinely unloaded or ambiguous target, failed visibility recovery, or missing row is still skipped. It does not search all account history or automatically retry already-submitted operations.
+
+Five added regression tests cover deletion-induced reflow, row redraw while scrolling, target disappearance, stop during scrolling, and transient unloading. All 49 local tests pass. The reported two skips still require retesting on the user's installation; viewport movement is a reproduced cause, not independently established as the exact cause of those two results.
