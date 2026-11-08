@@ -12,11 +12,11 @@ Chat Happens aims to make that cleanup easier through a browser userscript.
 
 ## Project status
 
-**v0.1.0 — first stable release.** Single and multiple deletion and archiving workflows have passed user-reported live tests. The automated suite contains 57 passing tests.
+**v0.1.0 — first stable release.** 
 
 ### Original planning note
 
-Early planning stage. No userscript implementation has been added yet. Kapoy isip pramis gyud. AI? Of course IO can use that but only at 80% as I do not want to get infected with brain rot.
+Early planning stage. No userscript implementation has been added yet. Kapoy isip pramis gyud. AI? Of course I can use that but only at 80% as I do not want to get infected with brain rot.
 
 ## Planning documents
 
